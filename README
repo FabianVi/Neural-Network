@@ -1,0 +1,18 @@
+#Neural Network C++ Library
+This Library should help by creating the first sort of KI and should help, geting started with neural networks,
+furthermore it should be a light weight c++ library for simple KI implementations.
+
+#Comming Soon
+<ul>
+<il>saving connections to file</il>
+<il>loading inputs and outputs</il>
+<il>creating a more advanced NN with the Network class (Neural Network)</il>
+<ul>
+<li>loopback neurons, in order to get a kind of memory</li>
+<li>random or oszillating neurons, in order to get a better learning behaviour<li>
+</ul>
+<li>adding visualization (console)</li>
+</ul>
+
+#Main.cpp
+A small example, which learns the NN a pattern 3x3, either 1 or 0 and associates a number with it.
