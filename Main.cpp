@@ -5,23 +5,7 @@
 
 int main(char** arg, int args) {
 
-	float input[3][9] = { 
-		{ 
-		  1.0f , 0.0f , 0.0f , 
-		  0.0f , 0.0f , 0.0f ,
-		  0.0f , 0.0f , 0.0f 
-		},
-		{
-		  0.0f , 0.0f , 0.0f ,
-		  0.0f , 1.0f , 0.0f ,
-		  0.0f , 0.0f , 0.0f
-		},
-		{
-		  1.0f , 0.0f , 1.0f ,
-		  0.0f , 0.0f , 0.0f ,
-		  0.0f , 0.0f , 1.0f
-		} 
-	};
+	Vectorx input[3] = { 9,9,9 };
 
 	float output[3] = {
 		5.0f,
@@ -32,14 +16,17 @@ int main(char** arg, int args) {
 	Network** networks = new Network * [NetworkCount];
 
 	for (int i = 0; i < NetworkCount; i++) {
-		networks[i] = new Network(9, 10, 1);
+		networks[i] = new Network(9, 9, 1);
 		networks[i]->updateConnections(0.1f);
 	}
 
 	float diff[NetworkCount] = { 0 };
+
 	float min = 99999999999.0f;
+
 	int nextNetwork = 0;
-	float*** connections;
+
+	Weights* connections;
 
 	while (min>0.001f) 
 	{
@@ -48,7 +35,7 @@ int main(char** arg, int args) {
 			diff[i] = 0;
 
 			for(int n=0; n<3;n++)
-				diff[i] += sqrt(pow(networks[i]->evaluate(input[n % 3])[0] - output[n % 3],2));
+				diff[i] += sqrt(pow(networks[i]->evaluate(&input[n % 3])->data[0] - output[n % 3],2));
 
 			if (min > diff[i]) {
 				min = diff[i];
@@ -71,6 +58,6 @@ int main(char** arg, int args) {
 	}
 
 	for (int i = 0; i < 3; i++)
-		std::cout << "Test" << i << " error of " <<  sqrt(pow(networks[nextNetwork]->evaluate(input[i % 3])[0] - output[i % 3], 2)) << std::endl;
+		std::cout << "Test" << i << " error of " <<  sqrt(pow(networks[nextNetwork]->evaluate(&input[i % 3])->data[0] - output[i % 3], 2)) << std::endl;
 
 }

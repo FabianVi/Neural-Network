@@ -1,30 +1,68 @@
 #pragma once
 
-float addFunction(float states[], int size);
-float avgFunction(float states[], int size);
-float sineFunction(float states[], int size);
-
 class Hidden;
 class Input;
+class Vectorx;
+
+float addFunction(Vectorx *v);
+float avgFunction(Vectorx* v);
+float sineFunction(Vectorx* v);
+
+
+
+class Vectorx {
+
+public:
+	Vectorx(int count);
+	Vectorx(const Vectorx& c);
+
+	float* getData();
+	float* getData(int i);
+	void setData(float* connections);
+
+	~Vectorx();
+
+	float* data;
+	int count;
+};
+
+class Weights {
+public:
+	Weights(Vectorx v);
+	Weights(const Weights& w);
+	~Weights();
+
+	Vectorx*** getConnections();
+	Vectorx** getConnections(int i);
+
+	void setConnections(Vectorx*** c);
+	void setConnections(int depth, Vectorx** c);
+	void setConnections(Weights* w);
+
+	Vectorx* v;
+	Vectorx*** connections;
+
+	int depth;
+
+};
 
 class Neuron {
 public:
-	Neuron(float (*fireFunc)(float[],int), int con, Hidden** nextNeurons);
-	Neuron(float (*fireFunc)(float[], int), int con, Input** inputNeurons);
+	Neuron(float (*fireFunc)(Vectorx*), int con, Hidden** nextNeurons);
+	Neuron(float (*fireFunc)(Vectorx*), int con, Input** inputNeurons);
 
 	float fire();
 	float getState();
-	float* getConnections();
-	void setConnections(float* connections);
+	Vectorx* getConnections();
+	void setConnections(Vectorx *c);
 	void updateConnections(float bias=0.1f);
 
 	~Neuron();
 
 protected:
 	float value = 0;
-	float (*fireFunc)(float[],int);
-	float* connections;
-	int connectionCount;
+	float (*fireFunc)(Vectorx*);
+	Vectorx* connections;
 	Hidden** nextNeurons;
 	Input** inputNeurons;
 };
@@ -42,23 +80,23 @@ protected:
 class Hidden : public Neuron {
 
 public:
-	Hidden(float (*fireFunc)(float[], int), int con, Hidden** nextNeurons);
-	Hidden(float (*fireFunc)(float[], int), int con, Input** inputNeurons);
+	Hidden(float (*fireFunc)(Vectorx*), int con, Hidden** nextNeurons);
+	Hidden(float (*fireFunc)(Vectorx*), int con, Input** inputNeurons);
 };
 
 class Output : public Neuron {
 public:
-	Output(float (*fireFunc)(float[], int), int con, Hidden** nextNeurons);
+	Output(float (*fireFunc)(Vectorx*), int con, Hidden** nextNeurons);
 };
 
 class Network {
 
 public:
-	Network(int in, int hidden, int out);
+	Network(int in, int out, int hidden);
 
-	float* evaluate(float* input);
-	float*** getConnections();
-	void setConnections(float*** connections);
+	Vectorx* evaluate(Vectorx* input);
+	Weights* getConnections();
+	void setConnections(Weights *w);
 	void updateConnections(float bias = 0.1f);
 
 	~Network();
@@ -68,7 +106,8 @@ private:
 	Hidden** HiddenNeuron;
 	Output** OutputNeuron;
 
-	int hidden, input, output;
-	float* outputVals;
-	float*** connections;
+	int hiddenCount, inputCount, outputCount;
+	Vectorx* output;
+	Weights* weights;
 };
+
