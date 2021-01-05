@@ -225,8 +225,6 @@ Output::Output(float (*fireFunc)(Vectorx*), int con, Hidden** nextNeurons) : Neu
 //Network
 Network::Network(int in, int hidden, int out) {
 
-	std::cout << "init" << std::endl;
-
 	srand(unsigned int(time(NULL)));
 
 	inputCount = in;
