@@ -166,7 +166,7 @@ float Neuron::fire() {
 
 	if (inputNeurons) {
 		for (int i = 0; i < connections->count; i++)
-			input->data[i] = inputNeurons[i]->fire()*connections->data[i];
+			input->data[i] = inputNeurons[i]->fire() * connections->data[i];
 
 	} else {
 		for (int i = 0; i < connections->count; i++)
@@ -292,6 +292,7 @@ void Network::updateConnections(float bias) {
 }
 
 Network::~Network() {
+	delete[] InputNeuron;
 	delete[] OutputNeuron;
 	delete[] HiddenNeuron;
 
