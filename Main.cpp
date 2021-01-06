@@ -1,6 +1,8 @@
 #include <iostream>
 #include "NeuralNetwork.h"
 
+#include "windows.h";
+
 #define NetworkCount 200
 
 /*
@@ -17,7 +19,16 @@
 *	2 ... won
 */
 
-int play(Vectorx &field,int n,float player) {
+int play(Vectorx &field,Vectorx *input,float player) {
+
+	int n = -1;
+
+	for (int i = 0; i < input->count; i++)
+		if (input->data[i] >= 0.0f)
+			n = i;
+
+	if (n == -1)
+		return 0;
 
 	if (!(n < field.count && n >= 0))
 		return 0;
@@ -57,6 +68,46 @@ int play(Vectorx &field,int n,float player) {
 	return 1;
 }
 
+int play(Vectorx& field,int n, float player) {
+
+	if (!(n < field.count && n >= 0))
+		return 0;
+
+	if (field.data[n] != 0)
+		return 0;
+
+	field.data[n] = player;
+
+	int length = sqrt(field.count);
+
+	for (int i = 0; i < length; i++)
+		for (int j = 0; j < length; j++)
+		{
+
+			if (i >= 1 && i <= length - 2 &&
+				field.data[i - 1 + j * length] == player &&
+				field.data[i + j * length] == player &&
+				field.data[i + 1 + j * length] == player) return 2;			// horizontal
+
+			if (j >= 1 && j <= length - 2 &&
+				field.data[(i + (j - 1) * length)] == player &&
+				field.data[i + j * length] == player &&
+				field.data[i + (j + 1) * length] == player) return 2;		//vertical
+
+			if (j >= 1 && j <= length - 2 && i >= 1 && i <= length - 2 &&
+				field.data[(i + 1 + (j - 1) * length)] == player &&
+				field.data[i + j * length] == player &&
+				field.data[i - 1 + (j + 1) * length] == player) return 2;	//accross left right
+
+			if (j >= 1 && j <= length - 2 && i >= 1 && i <= length - 2 &&
+				field.data[(i - 1 + (j - 1) * length)] == player &&
+				field.data[i + j * length] == player &&
+				field.data[i + 1 + (j + 1) * length] == player) return 2;		//accross right left
+		}
+
+	return 1;
+}
+
 
 //Draw the Field 
 void draw(Vectorx* display) {
@@ -89,6 +140,10 @@ void draw(Vectorx* display) {
 
 int main(char** arg, int args) {
 
+	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
+	DWORD events;
+	INPUT_RECORD buffer;
+
 	//Example: TikTakToe 3x3
 	int length = 3,
 		size = length * length,
@@ -97,13 +152,14 @@ int main(char** arg, int args) {
 		n = 0,
 		wins = 0,
 		wins_opponent=0,
-		adj=0;
+		adj=0,
+		drawC=0;
 
 
 	float learn = 0.01f, avg = 0;
 
 	//Initialise Network and Fields
-	Network* networkM = new Network(size, 9, 1);
+	Network* networkM = new Network(size, 9, 9);
 
 	Network** networks = new Network * [NetworkCount];
 	Vectorx* playfield = new Vectorx(size);
@@ -114,20 +170,19 @@ int main(char** arg, int args) {
 
 	for (int i = 0; i < NetworkCount; i++)
 	{
-		networks[i] = new Network(size, 9, 1);
+		networks[i] = new Network(size, 9, 9);
 		networks[i]->updateConnections(1.0f);
 	}
 
-
 	// learning loop
-
-	while (true) {
+	while(true) {
 
 		max_this = -10;
 		wins = 0;
 		wins_opponent = 0;
 		avg = 0;
 		adj = 0;
+		drawC = 0;
 
 		for (int i = 0; i < NetworkCount; i++) {
 
@@ -140,48 +195,44 @@ int main(char** arg, int args) {
 
 			score->data[i] = 1;
 
-			for (int j = 0; j < size / 2 + 1 ; j++, score->data[i] *= 2)
+			for (int j = 0; j < size / 2 + 1 ; j++, score->data[i] *= 3)
 			{
 				//Rules what is good and what is bad
-				// draw 
-				if (j == size / 2)
-				{
-					score->data[i] += 10;
-					break;
-				}
+				int status = play(*playfield, networks[i]->evaluate(playfield), 1.0f);
 
-				int move1 = int(networks[i]->evaluate(playfield)->data[0]);
-				int status = play(*playfield, move1, 1.0f);
-
-
-				//miss place
-				if (status == 0) {
-					score->data[i] += -10;
-					break;
-				}
 				// win
-				else if (status == 2) {
+				if (status == 0) {
+					score->data[i] -= 20;
+					break;
+				}
+				if (status == 2) {
 					wins++;
 					score->data[i] += 20;
 					break;
 				}
 
-				status = 0;
-
 				//learning the opponent to place without error (staying in the field)
-				while (status == 0) {
-					int move2 = int(networkM->evaluate(playfield)->data[0]);
-					status = play(*playfield, move2, -1.0f);
+				do {
+					status = play(*playfield, networkM->evaluate(playfield), -1.0f);
 
-					if (status == 0) {
+					if (status == 0)
 						networkM->updateConnections(learn);
-					}
 
-					if (status == 2) {
-						wins_opponent++;
-						break;
-					}
+				} while (status==0);
+
+				if (status == 2) {
+					wins_opponent++;
+					break;
 				}
+
+				// draw 
+				if (j == size / 2-1)
+				{
+					score->data[i] += 5;
+					drawC++;
+					break;
+				}
+
 			}
 
 			avg += score->data[i];
@@ -219,18 +270,39 @@ int main(char** arg, int args) {
 
 		}
 
-
-
 		// Displaying data
 		std::cout << "No. " << n << " learnfactor: " << learn <<  " avg score : " << avg << std::endl;
 		std::cout << "Weights adjusted: " << adj << std::endl;
 		std::cout << "Round Max score: " << max_this << " Total Max score: " << max << std::endl;
-		std::cout << "losses: " << NetworkCount-wins << " / wins " << wins << std::endl;
+		std::cout << "losses: " << NetworkCount-wins << " / wins: " << wins << " / Draws:" << drawC <<std::endl;
 		std::cout << "wins-opponent: " << wins_opponent << std::endl;
 		std::cout << "Best play of this iteration" << std::endl;
 
 		draw(display);
 
 		n++;
+
+		//playing against the KI if a key is pressed
+		PeekConsoleInput(handle, &buffer, 1, &events);
+		if (events > 0) {
+
+			int input, state;
+			for (int j = 0; j < size; j++)
+				playfield->data[j] = 0.0f;
+
+			do {
+				std::cout << "input:";
+				std::cin >> input;
+
+				state = play(*playfield, input, -1);
+
+				std::cout << "state: " << state << std::endl;
+				draw(playfield);
+
+				state = play(*playfield, networkM->evaluate(playfield), 1);
+				std::cout << "state: " << state << std::endl;
+				draw(playfield);
+			} while (state != 0);
+		}
 	}
 }
