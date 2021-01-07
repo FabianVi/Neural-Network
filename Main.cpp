@@ -1,7 +1,22 @@
 #include <iostream>
+#include <math.h>
 #include "NeuralNetwork.h"
 
-#include "windows.h";
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+	#include "windows.h";
+	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
+	DWORD events;
+	INPUT_RECORD buffer;
+	#define WINDOWS
+#elif __linux__
+
+#elif __unix__
+
+#elif defined(_POSIX_VERSION)
+
+#else
+#error "Unknown compiler"
+#endif
 
 #define NetworkCount 200
 
@@ -136,13 +151,7 @@ void draw(Vectorx* display) {
 	std::cout << std::endl;
 }
 
-
-
-int main(char** arg, int args) {
-
-	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
-	DWORD events;
-	INPUT_RECORD buffer;
+int main(int args, char* arg[]) {
 
 	//Example: TikTakToe 3x3
 	int length = 3,
@@ -282,7 +291,8 @@ int main(char** arg, int args) {
 
 		n++;
 
-		//playing against the KI if a key is pressed
+//playing against the KI if a key is pressed !!only Windows implementation!!
+#ifdef WINDOWS
 		PeekConsoleInput(handle, &buffer, 1, &events);
 		if (events > 0) {
 
@@ -304,5 +314,7 @@ int main(char** arg, int args) {
 				draw(playfield);
 			} while (state != 0);
 		}
+#endif
+
 	}
 }
