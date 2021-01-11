@@ -50,6 +50,32 @@ Vectorx::Vectorx(const Vectorx &c) {
 		data[i] = c.data[i];
 }
 
+Vectorx::Vectorx(const char* args...) {
+
+	this->count = 0;
+
+	const char* copy = args;
+
+	while (*copy != '\0') {
+		this->count++;
+		copy++;
+	}
+
+	data = new float[count];
+
+	va_list arglist;
+	va_start(arglist, args);
+
+	for(int i=0; i<this->count;i++, args++) 
+		if (*args == 'd') {
+			data[i] = float(va_arg(arglist, int));
+		} else if (*args == 'f') {
+			data[i] = va_arg(arglist, double);
+		}
+
+	va_end(args);
+}
+
 Vectorx::~Vectorx() {
 	delete[] data;
 }
@@ -223,36 +249,50 @@ Output::Output(float (*fireFunc)(Vectorx*), int con, Hidden** nextNeurons) : Neu
 
 
 //Network
-Network::Network(int in, int hidden, int out) {
+Network::Network(int in, Vectorx* hidden, int out) {
 
 	srand(unsigned int(time(NULL)));
 
 	inputCount = in;
-	hiddenCount = hidden;
+	this->hidden = hidden;
 	outputCount = out;
 
 	InputNeuron = new Input*[in];
-	HiddenNeuron = new Hidden*[hidden];
-	OutputNeuron = new Output*[out];
 
 	for (int i = 0; i < in; i++)
 		InputNeuron[i] = new Input(10.0f);
 
-	for (int i = 0; i < hidden; i++)
-		HiddenNeuron[i] = new Hidden(&sineFunction,in, InputNeuron);
+
+	HiddenNeuron = new Hidden**[this->hidden->count];
+
+	for (int i = 0; i < this->hidden->count; i++) {
+		HiddenNeuron[i] = new Hidden * [this->hidden->data[i]];
+
+		for (int j = 0; j < hidden->data[i]; j++)
+			if (i == 0)
+				HiddenNeuron[i][j] = new Hidden(&sineFunction, in, InputNeuron);
+			else
+				HiddenNeuron[i][j] = new Hidden(&sineFunction, this->hidden->data[i - 1], HiddenNeuron[i - 1]);
+	}
+
+
+
+	OutputNeuron = new Output*[out];
 
 	for (int i = 0; i < out; i++)
-		OutputNeuron[i] = new Output(&addFunction,hidden, HiddenNeuron);
+		OutputNeuron[i] = new Output(&addFunction, this->hidden->count, HiddenNeuron[this->hidden->count - 1]);
 
-	output = new Vectorx(outputCount);
-
-	Vectorx *v = new Vectorx(3);
+	Vectorx *v = new Vectorx(2 + this->hidden->count);
 
 	v->data[0] = inputCount;
-	v->data[1] = hiddenCount;
-	v->data[2] = outputCount;
+
+	for (int i = 1; i < hidden->count - 1; i++)
+		v->data[i] = this->hidden->data[i];
+
+	v->data[this->hidden->count-1] = outputCount;
 
 	weights = new Weights(*v);
+	output = new Vectorx(outputCount);
 
 	delete v;
 }
@@ -268,24 +308,27 @@ Vectorx* Network::evaluate(Vectorx* input) {
 	return output;
 }
 
-Weights* Network::getConnections() {
+Weights* Network::getWeights() {
 
-	for (int i = 0; i < hiddenCount; i++)
-		weights->connections[0][i]=HiddenNeuron[i]->getConnections();
+	for (int i = 0; i < hidden->count; i++)
+		for (int j = 0; j < hidden->data[i]; j++)
+			weights->connections[i][j]=HiddenNeuron[i][j]->getConnections();
 
 	for (int i = 0; i < outputCount; i++)
-		weights->connections[1][i] = OutputNeuron[i]->getConnections();
+		weights->connections[hidden->count-1][i] = OutputNeuron[i]->getConnections();
 
 	return weights;
 }
 
-void Network::setConnections(Weights* w) {
+void Network::setWeights(Weights* w) {
 	weights->setConnections(w);
 }
 
-void Network::updateConnections(float bias) {
-	for (int i = 0; i < hiddenCount; i++)
-		HiddenNeuron[i]->updateConnections(bias);
+void Network::updateWeights(float bias) {
+
+	for (int i = 0; i < hidden->count; i++)
+		for (int j = 0; j < hidden->data[i]; j++)
+			HiddenNeuron[i][j]->updateConnections(bias);
 
 	for (int i = 0; i < outputCount; i++)
 		OutputNeuron[i]->updateConnections(bias);

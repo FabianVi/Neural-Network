@@ -14,6 +14,7 @@ class Vectorx {
 
 public:
 	Vectorx(int count);
+	Vectorx(const char* args...);
 	Vectorx(const Vectorx& c);
 
 	float* getData();
@@ -69,7 +70,7 @@ protected:
 
 class Input {
 public:
-	Input(float value);
+	Input(float value=1.0f);
 	void setState(float value);
 	float fire();
 
@@ -92,21 +93,22 @@ public:
 class Network {
 
 public:
-	Network(int in, int out, int hidden);
+	Network(int in, Vectorx *hidden,int out);
 
 	Vectorx* evaluate(Vectorx* input);
-	Weights* getConnections();
-	void setConnections(Weights *w);
-	void updateConnections(float bias = 0.1f);
+	Weights* getWeights();
+	void setWeights(Weights *w);
+	void updateWeights(float bias = 0.1f);
 
 	~Network();
 
 private:
 	Input** InputNeuron;
-	Hidden** HiddenNeuron;
+	Hidden*** HiddenNeuron;
 	Output** OutputNeuron;
 
-	int hiddenCount, inputCount, outputCount;
+	int inputCount, outputCount;
+	Vectorx* hidden;
 	Vectorx* output;
 	Weights* weights;
 };

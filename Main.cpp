@@ -3,7 +3,7 @@
 #include "NeuralNetwork.h"
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-	#include "windows.h";
+	#include "windows.h"
 	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
 	DWORD events;
 	INPUT_RECORD buffer;
@@ -168,7 +168,7 @@ int main(int args, char* arg[]) {
 	float learn = 0.01f, avg = 0;
 
 	//Initialise Network and Fields
-	Network* networkM = new Network(size, 9, 9);
+	Network* networkM = new Network(size, new Vectorx("dd", 9,9), size);
 
 	Network** networks = new Network * [NetworkCount];
 	Vectorx* playfield = new Vectorx(size);
@@ -179,8 +179,8 @@ int main(int args, char* arg[]) {
 
 	for (int i = 0; i < NetworkCount; i++)
 	{
-		networks[i] = new Network(size, 9, 9);
-		networks[i]->updateConnections(1.0f);
+		networks[i] = new Network(size, new Vectorx("dd", 9,9), size);
+		networks[i]->updateWeights(1.0f);
 	}
 
 	// learning loop
@@ -225,7 +225,7 @@ int main(int args, char* arg[]) {
 					status = play(*playfield, networkM->evaluate(playfield), -1.0f);
 
 					if (status == 0)
-						networkM->updateConnections(learn);
+						networkM->updateWeights(learn);
 
 				} while (status==0);
 
@@ -253,27 +253,27 @@ int main(int args, char* arg[]) {
 					display->data[p] = playfield->data[p];
 			}
 
-			// finding the best of all
+			// finding the best of allsetWeights
 			if (max < score->data[i]) {
 				max = score->data[i];
-				networkM->setConnections(networks[i]->getConnections());
+				networkM->setWeights(networks[i]->getWeights());
 			}
 
 		}
 
 		avg /= float(NetworkCount);
 
-		w = networkM->getConnections();
+		w = networkM->getWeights();
 
 		//seting the best one for the next round, in order to have in every round a "good one"
-		networks[0]->setConnections(w);
+		networks[0]->setWeights(w);
 
 		//replacing the bad networks "bad" => everything below or equal avg
 		for (int i = 1; i < NetworkCount; i++) {
 
 			if (score->data[i] <= avg) {
-				networks[i]->setConnections(w);
-				networks[i]->updateConnections(learn);
+				networks[i]->setWeights(w);
+				networks[i]->updateWeights(learn);
 				adj++;
 			}
 
@@ -315,6 +315,5 @@ int main(int args, char* arg[]) {
 			} while (state != 0);
 		}
 #endif
-
 	}
 }
