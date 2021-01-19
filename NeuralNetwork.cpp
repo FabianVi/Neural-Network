@@ -72,7 +72,7 @@ Vectorx::Vectorx(const char* args...) {
 			data[i] = va_arg(arglist, float);
 		}
 
-	va_end(args);
+	va_end(arglist);
 }
 
 Vectorx::~Vectorx() {
@@ -252,7 +252,7 @@ Output::Output(float (*fireFunc)(Vectorx*), int con, Hidden** nextNeurons) : Neu
 //Network
 Network::Network(int in, Vectorx* hidden, int out) {
 
-	srand(unsigned int(time(NULL)));
+	srand((unsigned int)(time(NULL)));
 
 	inputCount = in;
 	this->hidden = hidden;
