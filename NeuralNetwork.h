@@ -8,8 +8,6 @@ float addFunction(Vectorx *v);
 float avgFunction(Vectorx* v);
 float sineFunction(Vectorx* v);
 
-
-
 class Vectorx {
 
 public:

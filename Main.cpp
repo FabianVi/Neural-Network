@@ -53,7 +53,7 @@ int play(Vectorx &field,Vectorx *input,float player) {
 
 	field.data[n] = player;
 
-	int length = sqrt(field.count);
+	int length = int(sqrt(field.count));
 
 	for(int i=0; i< length;i++)
 		for (int j = 0; j < length; j++)
@@ -93,7 +93,7 @@ int play(Vectorx& field,int n, float player) {
 
 	field.data[n] = player;
 
-	int length = sqrt(field.count);
+	int length = int(sqrt(field.count));
 
 	for (int i = 0; i < length; i++)
 		for (int j = 0; j < length; j++)
@@ -127,7 +127,7 @@ int play(Vectorx& field,int n, float player) {
 //Draw the Field 
 void draw(Vectorx* display) {
 
-	int length = sqrt(display->count);
+	int length = int(sqrt(display->count));
 	int size = display->count;
 
 	for (int o = 0; o < length + 2; o++)
@@ -248,14 +248,14 @@ int main(int args, char* arg[]) {
 
 			// finding the best of this round
 			if (max_this < score->data[i]) {
-				max_this = score->data[i];
+				max_this = int(score->data[i]);
 				for (int p = 0; p < size; p++)
 					display->data[p] = playfield->data[p];
 			}
 
 			// finding the best of allsetWeights
 			if (max < score->data[i]) {
-				max = score->data[i];
+				max = int(score->data[i]);
 				networkM->setWeights(networks[i]->getWeights());
 			}
 
@@ -305,6 +305,7 @@ int main(int args, char* arg[]) {
 				std::cin >> input;
 
 				state = play(*playfield, input, -1);
+
 
 				std::cout << "state: " << state << std::endl;
 				draw(playfield);

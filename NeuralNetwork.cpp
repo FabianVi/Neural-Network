@@ -15,7 +15,6 @@ float addFunction(Vectorx *v) {
 	return sum;
 }
 
-
 float avgFunction(Vectorx *v) {
 
 	float avg = 0;
@@ -70,7 +69,7 @@ Vectorx::Vectorx(const char* args...) {
 		if (*args == 'd') {
 			data[i] = float(va_arg(arglist, int));
 		} else if (*args == 'f') {
-			data[i] = va_arg(arglist, double);
+			data[i] = va_arg(arglist, float);
 		}
 
 	va_end(args);
@@ -105,9 +104,10 @@ Weights::Weights(Vectorx v) {
 	connections = new Vectorx**[depth];
 
 	for (int i = 0; i < this->depth; i++) {
-		connections[i] = new Vectorx* [this->v->data[i+1]];
+		connections[i] = new Vectorx* [size_t(this->v->data[i+1])];
+
 		for (int j = 0; j < v.data[i+1]; j++)
-			connections[i][j] = new Vectorx(v.data[i]);
+			connections[i][j] = new Vectorx(int(v.data[i]));
 	}
 }
 
@@ -126,7 +126,7 @@ Weights::Weights(const Weights &w) {
 	connections = new Vectorx** [w.depth];
 
 	for (int i = 0; i < w.depth; i++) {
-		connections[i] = new Vectorx *[w.v->data[i+1]];
+		connections[i] = new Vectorx *[size_t(w.v->data[i+1])];
 		for (int j = 0; j < v->data[i+1]; j++)
 			connections[i][j] = new Vectorx(*w.connections[i][j]);
 	}
@@ -138,7 +138,8 @@ Vectorx*** Weights::getConnections() {
 
 Vectorx** Weights::getConnections(int i) {
 
-	if(i>=depth)
+	if (i >= depth)
+		return nullptr;
 
 	return connections[i];
 }
@@ -266,13 +267,13 @@ Network::Network(int in, Vectorx* hidden, int out) {
 	HiddenNeuron = new Hidden**[this->hidden->count];
 
 	for (int i = 0; i < this->hidden->count; i++) {
-		HiddenNeuron[i] = new Hidden * [this->hidden->data[i]];
+		HiddenNeuron[i] = new Hidden * [size_t(this->hidden->data[i])];
 
 		for (int j = 0; j < hidden->data[i]; j++)
 			if (i == 0)
 				HiddenNeuron[i][j] = new Hidden(&sineFunction, in, InputNeuron);
 			else
-				HiddenNeuron[i][j] = new Hidden(&sineFunction, this->hidden->data[i - 1], HiddenNeuron[i - 1]);
+				HiddenNeuron[i][j] = new Hidden(&sineFunction, int(this->hidden->data[i - 1]), HiddenNeuron[i - 1]);
 	}
 
 
@@ -284,12 +285,12 @@ Network::Network(int in, Vectorx* hidden, int out) {
 
 	Vectorx *v = new Vectorx(2 + this->hidden->count);
 
-	v->data[0] = inputCount;
+	v->data[0] = float(inputCount);
 
 	for (int i = 1; i < hidden->count - 1; i++)
 		v->data[i] = this->hidden->data[i];
 
-	v->data[this->hidden->count-1] = outputCount;
+	v->data[this->hidden->count-1] = float(outputCount);
 
 	weights = new Weights(*v);
 	output = new Vectorx(outputCount);
