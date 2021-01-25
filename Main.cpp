@@ -18,7 +18,7 @@
 #error "Unknown compiler"
 #endif
 
-#define NetworkCount 200
+#define NetworkCount 1000
 
 /*
 * Ruleset
@@ -168,7 +168,7 @@ int main(int args, char* arg[]) {
 	float learn = 0.01f, avg = 0;
 
 	//Initialise Network and Fields
-	Network* networkM = new Network(size, new Vectorx("dd", 9,9), size);
+	Network* networkM = new Network(size, new Vectorx("ddd", 9,9,9), size);
 
 	Network** networks = new Network * [NetworkCount];
 	Vectorx* playfield = new Vectorx(size);
@@ -179,7 +179,7 @@ int main(int args, char* arg[]) {
 
 	for (int i = 0; i < NetworkCount; i++)
 	{
-		networks[i] = new Network(size, new Vectorx("dd", 9,9), size);
+		networks[i] = new Network(size, new Vectorx("ddd", 9, 9, 9), size);
 		networks[i]->updateWeights(1.0f);
 	}
 
@@ -209,11 +209,13 @@ int main(int args, char* arg[]) {
 				//Rules what is good and what is bad
 				int status = play(*playfield, networks[i]->evaluate(playfield), 1.0f);
 
-				// win
+
 				if (status == 0) {
 					score->data[i] -= 20;
 					break;
 				}
+
+				// win
 				if (status == 2) {
 					wins++;
 					score->data[i] += 20;
@@ -221,14 +223,15 @@ int main(int args, char* arg[]) {
 				}
 
 				//learning the opponent to place without error (staying in the field)
-				do {
-					status = play(*playfield, networkM->evaluate(playfield), -1.0f);
+				status = play(*playfield, networkM->evaluate(playfield), -1.0f);
 
-					if (status == 0)
-						networkM->updateWeights(learn);
+				//oponent loses
+				if (status == 0) {
+					score->data[i] += 2;
+					break;
+				}
 
-				} while (status==0);
-
+				//win opponent
 				if (status == 2) {
 					wins_opponent++;
 					break;
@@ -258,7 +261,6 @@ int main(int args, char* arg[]) {
 				max = int(score->data[i]);
 				networkM->setWeights(networks[i]->getWeights());
 			}
-
 		}
 
 		avg /= float(NetworkCount);
@@ -271,7 +273,7 @@ int main(int args, char* arg[]) {
 		//replacing the bad networks "bad" => everything below or equal avg
 		for (int i = 1; i < NetworkCount; i++) {
 
-			if (score->data[i] <= avg) {
+			if (score->data[i] <= avg/2.0f) {
 				networks[i]->setWeights(w);
 				networks[i]->updateWeights(learn);
 				adj++;
